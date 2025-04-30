@@ -1,5 +1,6 @@
 # PaperHub
-A space to share my personal writings.
+A personal archive of writings by Samuel Zhang, a technology executive exploring topics at the intersection of AI, systems engineering, business strategy, and financial analysis.  
+This space includes hands-on case studies, technical deep dives, and thought pieces shaped by real-world experience and cross-disciplinary insight.
 
 ## Performance Case Study: Local LLM Inference on Multi-GPU and PCIe Bandwidth-Constrained Systems
 **Author:** Samuel Zhang  
