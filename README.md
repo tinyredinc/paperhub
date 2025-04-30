@@ -1,4 +1,4 @@
-# paperhub
+# PaperHub
 A space to share my personal writings.
 
 ## Performance Case Study: Local LLM Inference on Multi-GPU and PCIe Bandwidth-Constrained Systems
