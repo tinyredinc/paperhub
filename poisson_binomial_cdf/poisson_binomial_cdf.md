@@ -4,10 +4,11 @@
 **Date:** 2025-08-16 
 
 ## Abstract
-This case study addresses a real-world probability problem derived from a weekly badminton signup system.  
-We demonstrate two approaches:  
-1. **Monte Carlo simulation** for approximate probability estimation.  
-2. **Analytical solution** using the **Poisson–Binomial distribution** and its cumulative distribution function (CDF).  
+
+This case study investigates a real-life probability problem arising in a badminton signup chatroom, where participation is limited to n players and late signups enter a waiting list. Each participant has an empirically estimated dropout probability, and the admission chance of a waiting-list player depends on the distribution of earlier dropouts. Formally, this can be modeled as the **Cumulative Distribution Function (CDF) of a Poisson–Binomial distribution**.  
+
+While an exact analytical solution exists, it requires advanced probability theory and computationally expensive algorithms. Instead, this study employs a **Monte Carlo Simulation** approach, which directly mirrors the real-world process of random participation. With modern computational power, Monte Carlo simulations are not only fast and scalable but also simple to implement, less error-prone, and flexible when adapting to different scenarios. The results demonstrate that Monte Carlo yields accurate and stable estimates of admission probabilities, making it a practical tool for solving complex probability problems in applied settings.
+
 
 ## Background
 In the badminton signup chatroom, there is a participant limit of 14. Anyone signing up after that limit enters a waiting list. If earlier participants drop out, waiting list members may move into the valid list. However, each participant has a personal dropout probability based on historical data.  
@@ -91,7 +92,6 @@ $$
 F(k) = P(S \leq k)
 $$
 
----
 
 ## Data Preparation
 
@@ -113,16 +113,126 @@ After automatic decryption, the decrypted SQLite database can be found at:
 
 - \Users\[:username]\Documents\chatlog\[:wechatid]
 
-For privacy reasons, I will not be releasing the original decrypted SQLite database files, as they contain my complete chat history with individuals and chatrooms.
+    For privacy reasons, I will not be releasing the original decrypted SQLite database files, as they contain my complete chat history with individuals and chatrooms.
 
 ### Data Preprocessing
 
-- Import SQLite databases into MySQL
+- Import SQLite databases into MySQL  
+  The import script used is [sqlite3-to-mysql](https://github.com/techouse/sqlite3-to-mysql) by techouse.  
+  This step is not strictly required; the main reason for performing it is to merge multiple SQLite databases into one and to work within a more robust RDBMS environment for data cleanup.
 
-The import script used is [sqlite3-to-mysql
-](https://github.com/techouse/sqlite3-to-mysql) by techouse. This step is not mandatory; the main reason for performing it is to merge multiple SQLite databases into one and to work within a more robust RDBMS environment for data cleanup.
+- Table: chatroom_msg  
+  Contains the full chat log from 2023-04-06 to 2025-08-13 for the target chatroom 20644756264@chatroom.  
+  Data file: [chatroom_msg.csv](data/chatroom_msg.csv)
+
+- Table: chatroom_msg_groupnote  
+  A trimmed dataset filtered from chatroom_msg, containing only signup-related messages.  
+  Data file: [chatroom_msg_groupnote.csv](data/chatroom_msg_groupnote.csv)
+
+- Table: signup_log_2025  
+  A structured activity log parsed from chatroom_msg_groupnote, recording each participant’s join and drop actions since 2025.  
+  Data file: [signup_log_2025.csv](data/signup_log_2025.csv)
+
+- Table: drop_rate_2025  
+  A statistical summary of each participant’s dropout probability, calculated from all activities since 2025.  
+  Data file: [drop_rate_2025.csv](data/drop_rate_2025.csv)
+
+From here, the dropout probabilities can be mapped directly into our Real-Life Example:
+```
+#接龙
+Aug 15 周五 8-11 p.m
+✨打球地址: 170 Shields Court (Markham Badminton)
+✨场地：4 5号
+✨限制人数14位，从第15位开始进入waitlist！
+✨周四晚上8⃣️点之后不可退接龙 如果有事🐦🐦 仍需付钱或转给别人 谢谢
+☀️请大家自觉按照报名人数和时间
+☀️非会员要额外支付$3(直接支付给su前台)
+‼️开车的朋友们请大家切记把车停在unit 1指定停车位,停在unit 2 车位有可能会被拖车
+1. Helen (46.67%)
+2. June (44.00%)
+3. Huiyi (40.00%)
+4. Leah (40.00%)
+5. Cheng (13.04%)
+6. Victor (21.28%)
+7. 小晨 (31.03%)
+8. 小新 (52.17%)
+9. 菲菲 (11.11%)
+10. Jason (23.33%)
+11. Kevin (8.57%)
+12. Kevin +1 (8.57%)
+13. Jassoonk (14.00%)
+14. Carrie 雙 (100.00%)
+15. Anson (25.00%)
+16. 0.0🦋 (33.33%)
+17. Henry Wang (12.50%)
+18. RED (0.00%)
+
+list_p = [4667, 4400, 4000, 4000, 1304, 2128, 3103, 5217, 1111, 2333, 857, 857, 1400, 10000, 2500, 3333, 1250]
+```
+
 
 ## Monte Carlo Simulation
+
+### Simple Random
+The simplest implementation is to use Python’s built-in `random` library. The core logic can be expressed in just three lines:
+```python
+list_rand = [random.randint(0, 10000) for _ in range(len(list_p))]
+tmp = [p for p, r in zip(list_p, list_rand) if p < r]
+return 1 if len(tmp) < limit else 0
+```
+Source code: [mc_simple_random.py](script/mc_simple_random.py) 
+
+This approach is straightforward but not computationally efficient. Running 1,000,000 drafts takes about 20 seconds on a modern PC:
+```
+Out of 1000000 drafts:
+Returned 1: 853594 times
+Returned 0: 146406 times
+Probability of returning 1: 0.8536
+Probability of returning 0: 0.1464
+Elapsed time for 1000000 drafts: 18.913014 seconds
+```
+
+### Vectorized Parallel
+
+To achieve high performance, the simulation can be vectorized using NumPy and distributed across multiple CPU cores with Python’s `multiprocessing` module. Instead of generating random numbers one by one, an entire matrix of random values is created in a single call and compared against participant probabilities in bulk. Each worker process handles a chunk of drafts independently, and the results are aggregated at the end.
+
+Worker function (vectorized with NumPy):
+```python
+def worker(list_p_np, limit, chunk_iters):
+    list_rand_all = np.random.randint(0, 10001, size=(chunk_iters, len(list_p_np)))
+    tmp_counts = np.sum(list_p_np < list_rand_all, axis=1)
+    return np.sum(tmp_counts < limit)
+```
+
+Parallel driver (multiprocessing pool):
+```python
+def parallel_vectorized(list_p_np, limit, drafts, num_workers):
+    chunk = drafts // num_workers
+    remainder = drafts % num_workers
+    tasks = [(list_p_np, limit, chunk) for _ in range(num_workers)]
+    if remainder > 0:
+        tasks[0] = (list_p_np, limit, chunk + remainder)
+    with mp.Pool(num_workers) as pool:
+        counts_1 = pool.starmap(worker, tasks)
+    total_1 = sum(counts_1)
+    total_0 = drafts - total_1
+    return total_1, total_0
+```
+Source code: [mc_vectorized_parallel.py](script/mc_vectorized_parallel.py) 
+
+Example benchmark:
+```
+Final results:
+Total drafts: 1,000,000
+Returned 1: 852,896
+Returned 0: 147,104
+Final Probability of returning 1: 0.85289600
+Final Probability of returning 0: 0.14710400
+Elapsed time: 0.1776 seconds
+```
+
+Compared with the simple random approach (≈19 seconds for 1M drafts),
+this vectorized parallel method achieves a **100X** speedup, making Monte Carlo simulation practical for very large runs (100M+ drafts) on commodity hardware.
 
 ## Analytical Solution
 
