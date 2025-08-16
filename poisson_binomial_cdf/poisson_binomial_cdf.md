@@ -90,35 +90,6 @@ $$
 F(k) = P(S \leq k)
 $$
 
-## Problem Identification
-
-Let `N` be the court capacity (guaranteed admission for the first `N` signups).  
-Consider a target player at overall signup position `j` (1-indexed).
-
-- If `j ≤ N`, admission is certain:  
-  $P(\text{admission}) = 1$.
-- If `j > N`, admission requires at least `d = j - N` dropouts among the `j - 1` players ahead.
-
-Model dropouts for the players ahead (indices `i = 1,…, j−1`) as independent Bernoulli random variables:
-
-$X_i \sim \text{Bernoulli}(p_i), \quad S = \sum_{i=1}^{j-1} X_i,$
-
-where $p_i$ is the empirical dropout probability for player `i`.
-
-Then $S$ follows a Poisson–binomial distribution with parameters $(p_1,…,p_{j−1})$, and the target admission probability is:
-
-$$
-P(\text{admission at position } j) =
-\begin{cases}
-1, & j \le N, \\\\
-P(S \ge j-N) = 1 - F(j-N-1), & j > N,
-\end{cases}
-$$
-
-where $F(k) = P(S \le k)$ is the CDF of $S$.
-
-
-
 ## Data Preparation
 
 ### WeChat Message Synchronization
