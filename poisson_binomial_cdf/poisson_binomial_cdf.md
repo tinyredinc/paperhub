@@ -90,6 +90,34 @@ $$
 F(k) = P(S \leq k)
 $$
 
+## Problem Identification
+
+Let `N` be the court capacity (guaranteed admission for the first `N` signups).  
+Consider a target player at overall signup position `j` (1-indexed).
+
+- If `j ≤ N`, admission is certain:  
+  $P(\text{admission}) = 1$.
+- If `j > N`, admission requires at least `d = j - N` dropouts among the `j - 1` players ahead.
+
+Model dropouts for the players ahead (indices `i = 1,…, j−1`) as independent Bernoulli random variables:
+
+$X_i \sim \text{Bernoulli}(p_i), \quad S = \sum_{i=1}^{j-1} X_i,$
+
+where $p_i$ is the empirical dropout probability for player `i`.
+
+Then $S$ follows a Poisson–binomial distribution with parameters $(p_1,…,p_{j−1})$, and the target admission probability is:
+
+$$
+P(\text{admission at position } j) =
+\begin{cases}
+1, & j \le N, \\\\
+P(S \ge j-N) = 1 - F(j-N-1), & j > N,
+\end{cases}
+$$
+
+where $F(k) = P(S \le k)$ is the CDF of $S$.
+
+
 
 ## Data Preparation
 
@@ -97,7 +125,7 @@ $$
 
 To obtain a complete copy of chat logs spanning multiple years, you need to synchronize messages from your phone to the PC client:
 
-- [Settings] => [General] => [Manage Chat History] => [Inport and Export Chat History]
+- [Settings] => [General] => [Manage Chat History] => [Import and Export Chat History]
 - [Export to computer] => [Export only selected chat history] => choose chatroom (20644756264@chatroom)
 
 By doing this, the PC client will have the full chat history for the selected chatroom. In this specific case, the history covers the period from 2023-04-06 to 2025-08-13.
@@ -227,6 +255,14 @@ Returned 0: 147,104
 Final Probability of returning 1: 0.85289600
 Final Probability of returning 0: 0.14710400
 Elapsed time: 0.1776 seconds
+
+Final results:
+Total drafts: 10,000,000
+Returned 1: 8,540,964
+Returned 0: 1,459,036
+Final Probability of returning 1: 0.85409640
+Final Probability of returning 0: 0.14590360
+Elapsed time: 1.5485 seconds
 ```
 
 Compared with the simple random approach (≈19 seconds for 1M drafts),
@@ -264,21 +300,66 @@ Therefore, running **10 million drafts** is sufficient. The resulting probabilit
 
 ## Analytical Solution
 
-An exact solution can be computed using the **Poisson–binomial distribution CDF**.  
-This is done via dynamic programming:
-\[
-f^{(i)}(k) = (1 - q_i) f^{(i-1)}(k) + q_i f^{(i-1)}(k-1),
-\]
-where \(f^{(i)}(k)\) is the probability of exactly \(k\) dropouts after considering the first \(i\) players.  
-After processing all players, the CDF is:
-\[
-F(k) = \Pr(S \leq k) = \sum_{j=0}^k f^{(n)}(j).
-\]
-The target probability for player \(r\) is then:
-\[
-\Pr(S \geq r-14) = 1 - F(r-15).
-\]
+To provide a benchmark for the Monte Carlo results, an exact analytical solution was implemented using the **Poisson–binomial distribution**. This distribution models the sum of independent Bernoulli random variables with different success probabilities, which matches our dropout setting.
 
-This method yields exact probabilities but requires more computation than the Monte Carlo approach when \(n\) and iterations are large.
+The probability mass function can be computed via **dynamic programming**:
+
+$$
+f^{(i)}(k) = (1 - q_i)\, f^{(i-1)}(k) + q_i\, f^{(i-1)}(k-1),
+$$
+
+where $f^{(i)}(k)$ is the probability of having exactly $k$ dropouts after considering the first $i$ players, and $q_i$ is the dropout probability for player $i$.
+
+After processing all $n$ players, the cumulative distribution function (CDF) is:
+
+$$
+F(k) = \Pr(S \leq k) = \sum_{j=0}^k f^{(n)}(j),
+$$
+
+where $S$ is the total number of dropouts.  
+
+The target probability for player $r$ is then:
+
+$$
+\Pr(S \geq r-14) = 1 - F(r-15).
+$$
+
+Core Logic:
+```python
+def poisson_binomial_cdf_less_than(q, L):
+    """Exact P(S < L) for S = sum Bernoulli(q_i), via O(n*L) DP."""
+    q = np.asarray(q, dtype=np.float64)
+    n = q.size
+    if L <= 0:
+        return 0.0
+    if L > n:
+        return 1.0
+
+    f = np.zeros(L, dtype=np.float64)
+    f[0] = 1.0
+    for qi in q:
+        kmax = min(L - 1, n)
+        for k in range(kmax, 0, -1):
+            f[k] = f[k] * (1.0 - qi) + f[k - 1] * qi
+        f[0] *= (1.0 - qi)
+    return float(f.sum())
+```
+Source code: [analytical_method.py](script/analytical_method.py) 
+
+Example benchmark:
+```
+n = 17, limit = 14
+Exact P(S < 14) = 0.8540000479
+```
 
 ## Conclusion
+
+This case study shows that a real-life admission probability problem in a badminton signup system can be rigorously modeled using the Poisson–binomial distribution. While the analytical solution via dynamic programming provides an exact benchmark, it requires specialized probability theory and careful implementation.  
+
+By contrast, the Monte Carlo simulation approach proved to be:  
+
+- **Accurate** – With 10 million drafts, the simulation converged to the analytical probability of ≈85.40%, with discrepancies below ±0.02%.  
+- **Efficient** – A vectorized parallel implementation completed the full 10M-draft simulation in just 1.55 seconds on a modern PC, making it practical even for real-time use.  
+- **Practical** – The method is simple to implement, reduces the risk of mathematical error, and adapts easily to different scenarios.  
+
+In conclusion, given sufficient compute power, Monte Carlo simulation is a robust, scalable, and accessible tool that delivers both speed and accuracy in solving complex probability problems.  

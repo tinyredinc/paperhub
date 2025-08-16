@@ -40,7 +40,7 @@ if __name__ == "__main__":
     limit = 14
 
     # Simulation parameters
-    batch_size = 1_000_000   # drafts per batch
+    batch_size = 10_000_000   # drafts per batch
     iterations = 1          # number of batches
     num_workers = mp.cpu_count()
 
