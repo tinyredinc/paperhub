@@ -1,6 +1,6 @@
 # Case Study: Solving a Real-Life Poisson–Binomial CDF Problem Using Monte Carlo Approach
 
-**Author:** Samuel Zhang  
+**Author:** Samuel Zhang (+ 270 BAs)  
 **Date:** 2025-08-16 
 
 ## Abstract
