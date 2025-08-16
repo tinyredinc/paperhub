@@ -9,8 +9,6 @@ We demonstrate two approaches:
 1. **Monte Carlo simulation** for approximate probability estimation.  
 2. **Analytical solution** using the **Poisson–Binomial distribution** and its cumulative distribution function (CDF).  
 
----
-
 ## Background
 In the badminton signup chatroom, there is a participant limit of 14. Anyone signing up after that limit enters a waiting list. If earlier participants drop out, waiting list members may move into the valid list. However, each participant has a personal dropout probability based on historical data.  
 
