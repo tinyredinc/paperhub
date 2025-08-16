@@ -8,3 +8,10 @@ A personal archive of writings by Samuel Zhang — technology executive, systems
 This case study investigates the impact of multi-GPU configurations and PCIe bandwidth constraints on single-threaded LLM inference performance using AMD MI50 GPUs in local deployment scenarios.
 
 Read the full case study → [mi50-llm-performance/mi50_llm_performance.md](mi50-llm-performance/mi50_llm_performance.md)
+
+
+## Case Study: Solving a Real-Life Poisson–Binomial CDF Problem Using Monte Carlo Approach
+**Author:** Samuel Zhang  
+**Date:** 2025-08-16 
+
+Read the full case study → [poisson_binomial_cdf/poisson_binomial_cdf.md](poisson_binomial_cdf/poisson_binomial_cdf.md)
