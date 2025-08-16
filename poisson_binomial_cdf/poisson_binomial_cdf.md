@@ -11,7 +11,7 @@ While an exact analytical solution exists, it requires advanced probability theo
 
 
 ## Background
-In the badminton signup chatroom, there is a participant limit of 14. Anyone signing up after that limit enters a waiting list. If earlier participants drop out, waiting list members may move into the valid list. However, each participant has a personal dropout probability based on historical data.  
+In the badminton signup chatroom, there is a participant limit of N. Anyone signing up after that limit enters a waiting list. If earlier participants drop out, waiting list members may move into the valid list. However, each participant has a personal dropout probability based on historical data.  
 
 Thus, the **admission probability** of a waiting-list participant depends on the distribution of how many earlier players drop out.
 
@@ -50,8 +50,6 @@ Aug 15 周五 8-11 p.m
 ```
 
 In this example, the author is **ranked #18** (i.e., **4th on the waiting list**, since only the first 14 are guaranteed). For the author to play, at least **4 earlier participants** must drop out.  
-
----
 
 ## Problem Identification
 
@@ -232,7 +230,37 @@ Elapsed time: 0.1776 seconds
 ```
 
 Compared with the simple random approach (≈19 seconds for 1M drafts),
-this vectorized parallel method achieves a **100X** speedup, making Monte Carlo simulation practical for very large runs (100M+ drafts) on commodity hardware.
+this vectorized parallel method achieves a **100X SPEEDUP**, making Monte Carlo simulation practical for very large runs (1B+ drafts) on commodity hardware.
+
+### Convergence Evaluation
+Monte Carlo simulation results are inherently statistical estimates. As the number of drafts increases, the estimated probability converges toward the true analytical value. To evaluate convergence, the simulation was run in batches, recording the probability of returning 1 after each batch.
+
+#### Evaluation Design
+Six independent Monte Carlo experiments were carried out with different **Batch sizes (B)** and **Total draft (T)**:
+
+- **D1–D4**: B = 100,000, T = 10M  
+- **D5**: B = 1M, T = 100M  
+- **D6**: B = 10M, T = 1B  
+
+At the end of each batch, the probability of returning `1` was computed and tracked over iterations. This allows monitoring of convergence behavior and variance reduction under different computational settings.
+
+#### Result Analysis
+![Convergence Evaluation](data/convergence_evaluation.png)
+Result data: [convergence_evaluation.csv](data/convergence_evaluation.csv) 
+
+1. **Stability of Estimates**  
+   All six runs converge rapidly to a value around **85.40%**, with only minor fluctuations after the first few iterations.
+
+2. **Impact of Batch Size**  
+   Larger batch sizes (D5, D6) produce smoother convergence curves with less noise, while smaller batches (D1–D4) show more short-term oscillation.  
+
+3. **Consistency Across Scales**  
+   Despite differences in batch size and iteration counts, the final probabilities across all experiments differ by less than **±0.02%**. This confirms the robustness of the estimate.
+
+4. **Law of Diminishing Returns**  
+   Increasing total drafts from 10M to 100M or even 1B does reduce variance further, but the improvement is marginal compared to the computational cost.
+
+Therefore, running **10 million drafts** is sufficient. The resulting probability stabilizes at about **85.40%**, with an accuracy level of approximately **±0.02%**. Larger-scale simulations confirm the result but are not necessary for practical purposes.
 
 ## Analytical Solution
 
