@@ -32,7 +32,11 @@ def parallel_vectorized(list_p_np, limit, drafts, num_workers):
 if __name__ == "__main__":
 
     # Problem setup
-    list_p_np = np.array([4667, 4400, 4000, 2333, 5217, 3103, 1111, 4000, 2128, 1304, 2128, 10000, 10000, 1400, 1400, 857, 857, 3333])
+    list_p_np = np.array([
+        4667, 4400, 4000, 4000, 1304, 2128,
+        3103, 5217, 1111, 2333, 857, 857,
+        1400, 10000, 2500, 3333, 1250
+    ])
     limit = 14
 
     # Simulation parameters
