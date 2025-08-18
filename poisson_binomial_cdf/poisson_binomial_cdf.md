@@ -352,10 +352,10 @@ Source code: [mc_pytorch_dual_gpu.py](script/mc_pytorch_dual_gpu.py)
 
 | Method                  | Environment               | Elapsed Time | P(1)       | P(0)       |
 |-------------------------|---------------------------|--------------|------------|------------|
-| Simple Random (Python)  | Single-thread Python RNG  | ~5.3 hours*  | ~0.854     | ~0.146     |
+| Simple Random (Python)  | Single-thread Python RNG  | ~4.1 hours*  | ~0.854     | ~0.146     |
 | Vectorized Parallel CPU | 36-core Xeon, NumPy + mp  | 21.12 s      | 0.85399439 | 0.14600561 |
 | Dual GPU Acceleration   | 2× Radeon Instinct MI50   | 0.49 s       | 0.85386836 | 0.14613164 |
 
-\*Estimated by scaling from 1M drafts = 19 s.  
+\*Estimated by scaling from 1M drafts = 14.8 s.  
 
 This shows an impressive progression: from hours on naïve Python code, to tens of seconds with optimized CPU vectorization, to sub-second runtimes with dual GPUs. The GPU solution is not strictly required for the badminton example, but it demonstrates how Monte Carlo simulation scales as a general-purpose HPC technique. Future work could extend this to multi-GPU clusters for even more complex or correlated stochastic models.  
