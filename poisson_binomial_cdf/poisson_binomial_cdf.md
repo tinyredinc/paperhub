@@ -341,12 +341,7 @@ In conclusion, given sufficient compute power, Monte Carlo simulation is a robus
 
 According to the Convergence Evaluation section, running 10 million drafts is already sufficient—both accurate and reasonably fast—for the admission probability problem studied here. Larger-scale simulations confirm the result but are not necessary for practical purposes.  
 
-Nevertheless, this project naturally extends into a high-performance computing (HPC) challenge: how far can we push Monte Carlo simulation with modern hardware? The journey illustrates a clear progression:  
-
-1. Simple Random – a naïve Python loop using the built-in `random` module. Easy to write, but slow (≈19 seconds for 1M drafts).  
-2. Vectorized Parallel – optimized NumPy + multiprocessing, achieving ≈100× speedup on CPUs by exploiting SIMD and multicore parallelism.  
-3. GPU Acceleration – running the same simulation on GPUs, which are designed for massive vector and parallel compute, enables billion-scale drafts in under a second.  
-Source code: [mc_pytorch_dual_gpu.py](script/mc_pytorch_dual_gpu.py)  
+Nevertheless, this project naturally extends into a high-performance computing (HPC) challenge: how far can we push Monte Carlo simulation with modern hardware?  
 
 ### Benchmark: 1 Billion Drafts  
 
@@ -356,6 +351,11 @@ Source code: [mc_pytorch_dual_gpu.py](script/mc_pytorch_dual_gpu.py)
 | Vectorized Parallel CPU | 36-core Xeon, NumPy + mp  | 21.12 s      | 700x        | 0.85399439 | 0.14600561 |
 | Dual GPU Acceleration   | 2× Radeon Instinct MI50   | 0.49 s       | 30000x      | 0.85386836 | 0.14613164 |
 
-\*Estimated by scaling from 1M drafts = 14.8 s. The 1 Billion Draft benchmark was executed on a Xeon server equipped with ample system memory and dual Radeon Instinct MI50 compute accelerators, running Ubuntu Server OS. Owing to the significantly higher core count and computational capacity of the Xeon processor—factors that strongly benefit parallelization—combined with the reduced system overhead of Ubuntu Server relative to a windows PC environment with numerous background processes, a substantial performance improvement was observed. Specifically, the single-threaded Python RNG 1M draft execution time decreased from 18.9 s to 14.8 s. Furthermore, the vectorized parallel implementation achieved a remarkable acceleration, completing 1B drafts in 21.1 s, corresponding to an approximate 700-fold speedup attributable to the 36-core Xeon CPU.
+\*Estimated by scaling from 1M drafts = 14.8 s. The 1 Billion Draft benchmark was executed on a Xeon server equipped with ample system memory and dual Radeon Instinct MI50 compute accelerators, running Ubuntu Server OS. Owing to the significantly higher core count and computational capacity of the Xeon processor—factors that strongly benefit parallelization—combined with the reduced system overhead of Ubuntu Server relative to a windows PC environment with numerous background processes, a substantial performance improvement was observed. Specifically, the single-threaded Python RNG 1M draft execution time decreased from 18.9 s to 14.8 s. Furthermore, the vectorized parallel implementation achieved a remarkable acceleration, completing 1B drafts in 21.1 s, corresponding to an approximate 700x speedup attributable to the 36-core Xeon CPU.
 
-This shows an impressive progression: from hours on naïve Python code, to tens of seconds with optimized CPU vectorization, to sub-second runtimes with dual GPUs. The GPU solution is not strictly required for the badminton example, but it demonstrates how Monte Carlo simulation scales as a general-purpose HPC technique. Future work could extend this to multi-GPU clusters for even more complex or correlated stochastic models.  
+1. Simple Random – a naive Python implementation utilizing the built-in random module. While straightforward to implement, this approach is highly inefficient, requiring on the order of tens of seconds to generate 1M drafts.
+2. Vectorized Parallel – optimized NumPy combined with multiprocessing, achieved speedups of several hundred times on CPUs (depending on processor architecture and core count) by exploiting both SIMD instructions and multicore parallelism.  
+3. GPU Acceleration – running the same simulation on GPUs, which are designed for massive vector and parallel compute, enables billion-scale drafts in under a second.  
+Source code: [mc_pytorch_dual_gpu.py](script/mc_pytorch_dual_gpu.py)  
+
+This shows an impressive progression: from hours on naive Python code, to tens of seconds with optimized CPU vectorization, to sub-second runtimes with dual GPUs. The GPU solution is not strictly required for the badminton example, but it demonstrates how Monte Carlo simulation scales as a general-purpose HPC technique. Future work could extend this to multi-GPU clusters for even more complex or correlated stochastic models.  
