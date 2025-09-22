@@ -350,11 +350,11 @@ Source code: [mc_pytorch_dual_gpu.py](script/mc_pytorch_dual_gpu.py)
 
 ### Benchmark: 1 Billion Drafts  
 
-| Method                  | Environment               | Elapsed Time | P(1)       | P(0)       |
-|-------------------------|---------------------------|--------------|------------|------------|
-| Simple Random (Python)  | Single-thread Python RNG  | ~4.1 hours*  | ~0.854     | ~0.146     |
-| Vectorized Parallel CPU | 36-core Xeon, NumPy + mp  | 21.12 s      | 0.85399439 | 0.14600561 |
-| Dual GPU Acceleration   | 2× Radeon Instinct MI50   | 0.49 s       | 0.85386836 | 0.14613164 |
+| Method                  | Remark                    | Elapsed Time | Performance | P(1)       | P(0)       |
+|-------------------------|---------------------------|--------------|-------------|------------|------------|
+| Simple Random (Python)  | Single-thread Python RNG  | ~4.1 hours*  | 1x          | ~0.854     | ~0.146     |
+| Vectorized Parallel CPU | 36-core Xeon, NumPy + mp  | 21.12 s      | 700x        | 0.85399439 | 0.14600561 |
+| Dual GPU Acceleration   | 2× Radeon Instinct MI50   | 0.49 s       | 30000x      | 0.85386836 | 0.14613164 |
 
 \*Estimated by scaling from 1M drafts = 14.8 s. The 1 Billion Draft benchmark was executed on a Xeon server equipped with ample system memory and dual Radeon Instinct MI50 compute accelerators, running Ubuntu Server OS. Owing to the significantly higher core count and computational capacity of the Xeon processor—factors that strongly benefit parallelization—combined with the reduced system overhead of Ubuntu Server relative to a windows PC environment with numerous background processes, a substantial performance improvement was observed. Specifically, the single-threaded Python RNG 1M draft execution time decreased from 18.9 s to 14.8 s. Furthermore, the vectorized parallel implementation achieved a remarkable acceleration, completing 1B drafts in 21.1 s, corresponding to an approximate 700-fold speedup attributable to the 36-core Xeon CPU.
 
